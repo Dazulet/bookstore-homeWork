@@ -2,73 +2,114 @@ package handlers
 
 import (
 	"bookstore/models"
-	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 )
 
-var books = make(map[int]models.Book)
-var nextID = 1
+var boks = []models.Book{
+	{ID: 1, Title: "Harry Potter", AuthorID: 2, CategoryID: 1, Price: 2000},
+	{ID: 2, Title: "anime", AuthorID: 3, CategoryID: 3, Price: 3000},
+	{ID: 3, Title: "test", AuthorID: 4, CategoryID: 2, Price: 4000}}
 
-func GetBook(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var books1 []models.Book
+func GetBook(c *gin.Context) {
+	categoryIDStr := c.Query("category_id")
+	firstPg := c.DefaultQuery("L", "1")
+	lastPg := c.DefaultQuery("R", "2")
 
-	//for _, book := range books {
-	//	books1 = append(books1, book)
-	//}
-	json.NewEncoder(w).Encode(books1)
+	L, _ := strconv.Atoi(firstPg)
+	R, _ := strconv.Atoi(lastPg)
+
+	var filteredBooks []models.Book
+	for _, b := range boks {
+		if categoryIDStr == "" || fmt.Sprint(b.CategoryID) == categoryIDStr {
+			filteredBooks = append(filteredBooks, b)
+		}
+	}
+
+	startIndex := (L - 1) * R
+	endIndex := startIndex + R
+
+	if startIndex >= len(filteredBooks) {
+		c.JSON(http.StatusOK, []models.Book{})
+		return
+	}
+
+	if endIndex > len(filteredBooks) {
+		endIndex = len(filteredBooks)
+	}
+
+	result := filteredBooks[startIndex:endIndex]
+	c.JSON(http.StatusOK, result)
+}
+func GetBookByID(c *gin.Context) {
+	id := c.Param("id")
+
+	for _, b := range boks {
+		if fmt.Sprint(b.ID) == id {
+			c.JSON(http.StatusOK, b)
+			return
+		}
+	}
+
+	c.JSON(http.StatusNotFound, gin.H{"error": "book not found"})
 }
 
-func AddBook(w http.ResponseWriter, r *http.Request) {
+func AddBook(c *gin.Context) {
 	var book models.Book
-	if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&book); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	book.ID = nextID
-	nextID++
-	books[book.ID] = book
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(book)
+
+	if book.Title == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Title empty"})
+		return
+	}
+
+	if book.Price <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Price must be greater than 0"})
+		return
+	}
+
+	book.ID = len(boks) + 1
+	boks = append(boks, book)
+	c.JSON(http.StatusCreated, book)
 }
 
-func UpdateBook(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	id, err := strconv.Atoi(params["id"])
-	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
-		return
-	}
-	_, exists := books[id]
-	if !exists {
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
-	}
+func UpdateBook(c *gin.Context) {
+	id := c.Param("id")
+
 	var updatedBook models.Book
-	if err := json.NewDecoder(r.Body).Decode(&updatedBook); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&updatedBook); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	updatedBook.ID = id
-	books[id] = updatedBook
-	json.NewEncoder(w).Encode(updatedBook)
+
+	for i, b := range boks {
+		if fmt.Sprint(b.ID) == id {
+			updatedBook.ID = b.ID
+			boks[i] = updatedBook
+			c.JSON(http.StatusOK, updatedBook)
+			return
+		}
+	}
+
+	c.JSON(http.StatusNotFound, gin.H{"error": "book not found"})
 }
 
-func DeleteBook(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	id, err := strconv.Atoi(params["id"])
-	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
-		return
+func DeleteBook(c *gin.Context) {
+	id := c.Param("id")
+
+	for i, b := range boks {
+		if fmt.Sprint(b.ID) == id {
+			boks = append(boks[:i], boks[i+1:]...)
+			c.JSON(http.StatusOK, gin.H{"message": "book deleted"})
+			return
+		}
 	}
-	_, exists := books[id]
-	if !exists {
-		http.Error(w, "User not found", http.StatusNotFound)
-		return
-	}
-	delete(books, id)
-	w.WriteHeader(http.StatusNoContent)
+
+	c.JSON(http.StatusNotFound, gin.H{"error": "book not found"})
 }

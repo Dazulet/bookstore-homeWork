@@ -2,32 +2,36 @@ package handlers
 
 import (
 	"bookstore/models"
-	"encoding/json"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-var nextIDAuthors = 1
-var userList []models.Author
-
-func GetAuthors(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	//for _, user := range userList {
-	//	userList = append(userList, user)
-	//}
-	json.NewEncoder(w).Encode(userList)
+var users = []models.Author{
+	{ID: 1, Name: "Baltash"},
+	{ID: 2, Name: "Daulet"},
+	{ID: 3, Name: "Danchick"},
+	{ID: 4, Name: "Rahat"},
+	{ID: 5, Name: "Nursayat"},
 }
 
-func AddAuthor(w http.ResponseWriter, r *http.Request) {
+func GetAuthors(c *gin.Context) {
+	c.JSON(http.StatusOK, users)
+
+}
+
+func AddAuthor(c *gin.Context) {
 	var user models.Author
 
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	user.ID = nextIDAuthors
-	nextIDAuthors++
-	userList = append(userList, user)
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
+	if user.Name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Name is required"})
+		return
+	}
+	user.ID = len(users) + 1
+	users = append(users, user)
+	c.JSON(http.StatusCreated, user)
 }
