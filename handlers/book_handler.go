@@ -12,7 +12,17 @@ import (
 var boks = []models.Book{
 	{ID: 1, Title: "Harry Potter", AuthorID: 2, CategoryID: 1, Price: 2000},
 	{ID: 2, Title: "anime", AuthorID: 3, CategoryID: 3, Price: 3000},
-	{ID: 3, Title: "test", AuthorID: 4, CategoryID: 2, Price: 4000}}
+	{ID: 3, Title: "test", AuthorID: 4, CategoryID: 1, Price: 4000},
+	{ID: 4, Title: "test1", AuthorID: 2, CategoryID: 1, Price: 2000},
+	{ID: 5, Title: "test2", AuthorID: 3, CategoryID: 3, Price: 3000},
+	{ID: 6, Title: "test3", AuthorID: 4, CategoryID: 2, Price: 4000},
+	{ID: 7, Title: "test4", AuthorID: 2, CategoryID: 1, Price: 2000},
+	{ID: 8, Title: "test5", AuthorID: 3, CategoryID: 1, Price: 3000},
+	{ID: 9, Title: "test6", AuthorID: 4, CategoryID: 2, Price: 4000},
+	{ID: 10, Title: "test7", AuthorID: 2, CategoryID: 1, Price: 2000},
+	{ID: 11, Title: "test8", AuthorID: 3, CategoryID: 1, Price: 3000},
+	{ID: 12, Title: "test9", AuthorID: 4, CategoryID: 2, Price: 4000},
+}
 
 func GetBook(c *gin.Context) {
 	categoryIDStr := c.Query("category_id")
