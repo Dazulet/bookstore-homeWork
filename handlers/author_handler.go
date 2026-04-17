@@ -1,37 +1,35 @@
 package handlers
 
 import (
+	"bookstore/config"
 	"bookstore/models"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-var users = []models.Author{
-	{ID: 1, Name: "Baltash"},
-	{ID: 2, Name: "Daulet"},
-	{ID: 3, Name: "Danchick"},
-	{ID: 4, Name: "Rahat"},
-	{ID: 5, Name: "Nursayat"},
-}
-
 func GetAuthors(c *gin.Context) {
+	var users []models.Author
+	config.DB.Find(&users) // Берем из БД
 	c.JSON(http.StatusOK, users)
-
 }
 
 func AddAuthor(c *gin.Context) {
 	var user models.Author
-
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if user.Name == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Name is required"})
+
+	if user.Name == "" || user.Email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Name and Email are required"})
 		return
 	}
-	user.ID = len(users) + 1
-	users = append(users, user)
+
+	if err := config.DB.Create(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create user"})
+		return
+	}
+
 	c.JSON(http.StatusCreated, user)
 }
