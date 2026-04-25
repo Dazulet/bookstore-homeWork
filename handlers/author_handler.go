@@ -9,27 +9,22 @@ import (
 )
 
 func GetAuthors(c *gin.Context) {
-	var users []models.Author
-	config.DB.Find(&users) // Берем из БД
-	c.JSON(http.StatusOK, users)
+	var authors []models.Author
+	config.DB.Find(&authors)
+	c.JSON(http.StatusOK, authors)
 }
 
 func AddAuthor(c *gin.Context) {
-	var user models.Author
-	if err := c.ShouldBindJSON(&user); err != nil {
+	var author models.Author
+	if err := c.ShouldBindJSON(&author); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if user.Name == "" || user.Email == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Name and Email are required"})
+	if err := config.DB.Create(&author).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create author"})
 		return
 	}
 
-	if err := config.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create user"})
-		return
-	}
-
-	c.JSON(http.StatusCreated, user)
+	c.JSON(http.StatusCreated, author)
 }

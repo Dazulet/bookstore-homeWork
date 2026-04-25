@@ -2,8 +2,8 @@ package main
 
 import (
 	"bookstore/config"
-	"bookstore/def"
 	"bookstore/handlers"
+	"bookstore/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,9 +13,11 @@ func main() {
 	r := gin.Default()
 
 	r.POST("/login", handlers.Login)
+	r.POST("/authors", handlers.AddAuthor)
 
 	r.GET("/books", handlers.GetBook)
 	r.GET("/books/:id", handlers.GetBookByID)
+	r.GET("/categories", handlers.GetCategory)
 
 	protected := r.Group("/books")
 	protected.Use(middleware.AuthRequired())

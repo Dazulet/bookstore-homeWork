@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"bookstore/config"
-	"bookstore/def"
+	"bookstore/middleware"
 	"bookstore/models"
 	"net/http"
 	"time"
